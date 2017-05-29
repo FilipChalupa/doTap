@@ -50,6 +50,8 @@ class Score {
 		this.value = this.getStoredScore()
 		this.currentFontSize = 0
 		this.targetFontSize = 0
+		this.updateCallback = null
+		this.claimCallback = null
 	}
 
 
@@ -83,9 +85,58 @@ class Score {
 	}
 
 
-	onTap() {
-		this.value += 1
+	updateValue(value) {
+		this.value = value
 		this.storeScore()
+		this.sendScore()
+	}
+
+
+	onTap() {
+		this.updateValue(this.value + 1)
+		this.sendClaim()
+	}
+
+
+	add(value) {
+		this.updateValue(this.value + value)
+	}
+
+
+	removeRelativeTo(otherScore) {
+		const valueToRemove = 1
+		let newValue = this.value - valueToRemove
+		if (newValue < 0) {
+			this.updateValue(0)
+			return this.value
+		}
+
+		this.updateValue(newValue)
+		return valueToRemove
+	}
+
+
+	sendScore() {
+		if (this.updateCallback) {
+			this.updateCallback(this.value)
+		}
+	}
+
+
+	sendClaim() {
+		if (this.claimCallback) {
+			this.claimCallback()
+		}
+	}
+
+
+	onUpdate(updateCallback) {
+		this.updateCallback = updateCallback
+	}
+
+
+	onClaim(claimCallback) {
+		this.claimCallback = claimCallback
 	}
 
 
@@ -112,6 +163,105 @@ class Score {
 
 
 
+class Network {
+
+	constructor(url, score) {
+		this.url = url
+		this.score = score
+		this.socket = null
+		this.connected = false
+
+		this.open = this.open.bind(this)
+		this.message = this.message.bind(this)
+		this.close = this.close.bind(this)
+		this.onScoreUpdate = this.onScoreUpdate.bind(this)
+		this.onScoreClaim = this.onScoreClaim.bind(this)
+
+		this.connect()
+		this.addListeners()
+	}
+
+
+	static get reconnectTimeout() {
+		return 3000
+	}
+
+
+	addListeners() {
+		this.score.onUpdate(this.onScoreUpdate)
+		this.score.onClaim(this.onScoreClaim)
+	}
+
+
+	onScoreUpdate(score) {
+		this.send({
+			score,
+		})
+	}
+
+
+	onScoreClaim() {
+		this.send({
+			claimPoints: true,
+		})
+	}
+
+
+	connect() {
+		this.socket = new WebSocket(this.url)
+		this.socket.addEventListener('open', this.open)
+		this.socket.addEventListener('message', this.message)
+		this.socket.addEventListener('close', this.close)
+	}
+
+
+	send(data) {
+		if (this.connected) {
+			this.socket.send(JSON.stringify(data))
+		}
+	}
+
+
+	open(event) {
+		this.connected = true
+	}
+
+
+	message(event) {
+		const actions = JSON.parse(event.data)
+		Object.keys(actions).forEach((action) => {
+			const data = actions[action]
+			switch(action) {
+				case 'claim':
+					this.send({
+						give: {
+							to: data.by,
+							amount: this.score.removeRelativeTo(data.score),
+						},
+					})
+					break
+				case 'add':
+					this.score.add(data)
+					break
+				default:
+					console.warn(`Unknown action: ${action}`)
+			}
+		})
+	}
+
+
+	close(event) {
+		this.socket = null
+		this.connected = false
+		setTimeout(() => {
+			this.connect()
+		}, Network.reconnectTimeout)
+	}
+
+}
+
+
+
 class App {
 
 	constructor() {
@@ -120,6 +270,7 @@ class App {
 
 		this.ripples = []
 		this.score = new Score()
+		this.network = new Network('ws://192.168.0.23:8080', this.score)
 
 		this.onTap = this.onTap.bind(this)
 		this.onResize = this.onResize.bind(this)
