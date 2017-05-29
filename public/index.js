@@ -52,6 +52,7 @@ class Score {
 		this.targetFontSize = 0
 		this.updateCallback = null
 		this.claimCallback = null
+		this.isInverted = false
 	}
 
 
@@ -70,8 +71,18 @@ class Score {
 	}
 
 
+	static get colorInv() {
+		return '#FFFFFF'
+	}
+
+
 	static get occupyWidth() {
 		return 0.5
+	}
+
+
+	setInverted(isInverted) {
+		this.isInverted = isInverted
 	}
 
 
@@ -144,7 +155,7 @@ class Score {
 		const text = this.value
 		context.textAlign = 'center'
 		context.textBaseline = 'middle'
-		context.fillStyle = Score.color
+		context.fillStyle = this.isInverted ? Score.colorInv : Score.color
 
 		this.targetFontSize = Score.maxFontSize
 		while (true) {
@@ -267,6 +278,7 @@ class App {
 	constructor() {
 		this.canvasElement = document.getElementById('canvas')
 		this.context = this.canvasElement.getContext('2d')
+		this.isInverted = false
 
 		this.ripples = []
 		this.score = new Score()
@@ -282,9 +294,25 @@ class App {
 	}
 
 
+	static get backroundColor() {
+		return '#FFFFFF'
+	}
+
+
+	static get backroundColorInv() {
+		return '#000000'
+	}
+
+
 	addListeners() {
 		this.canvasElement.addEventListener('click', this.onTap)
 		window.addEventListener('resize', this.onResize)
+	}
+
+
+	setInverted(isInverted) {
+		this.isInverted = isInverted
+		this.score.setInverted(isInverted)
 	}
 
 
@@ -318,7 +346,9 @@ class App {
 		const width = this.canvasElement.width
 		const height = this.canvasElement.height
 
-		context.clearRect(0, 0, width, height)
+		context.rect(0, 0, width, height)
+		context.fillStyle = this.isInverted ? App.backroundColorInv :App.backroundColor
+		context.fill()
 
 		this.ripples = this.ripples.filter((ripple) => {
 			ripple.render(context, currentTime)
