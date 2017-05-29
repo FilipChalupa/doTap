@@ -48,16 +48,28 @@ class Score {
 
 	constructor() {
 		this.value = 0
+		this.currentFontSize = Score.maxFontSize
+		this.targetFontSize = this.currentFontSize
 	}
 
 
 	static get font() {
-		return '30px Arial'
+		return 'Arial'
+	}
+
+
+	static get maxFontSize() {
+		return 150
 	}
 
 
 	static get color() {
 		return '#000000'
+	}
+
+
+	static get occupyWidth() {
+		return 0.5
 	}
 
 
@@ -67,10 +79,22 @@ class Score {
 
 
 	render(context, time, canvasWidth, canvasHeight) {
-		context.font = Score.font
+		const text = this.value
 		context.textAlign = 'center'
+		context.textBaseline = 'middle'
 		context.fillStyle = Score.color
-		context.fillText(this.value, Math.floor(canvasWidth / 2), Math.floor(canvasHeight / 2))
+
+		this.targetFontSize = Score.maxFontSize
+		while (true) {
+			context.font = `${this.targetFontSize}px ${Score.font}`
+			if (context.measureText(text).width < canvasWidth * Score.occupyWidth) {
+				break
+			}
+			this.targetFontSize--
+		}
+		this.currentFontSize = Math.round(this.currentFontSize + (this.targetFontSize - this.currentFontSize) / 5)
+		context.font = `${this.currentFontSize}px ${Score.font}`
+		context.fillText(text, Math.floor(canvasWidth / 2), Math.floor(canvasHeight / 2))
 	}
 
 }
