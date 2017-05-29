@@ -1,11 +1,12 @@
 const WebSocket = require('ws')
 
-const wss = new WebSocket.Server({ port: 8080 })
+const port = process.env.PORT || 8080
+const wss = new WebSocket.Server({ port })
 
 let lastClientId = 0
 const players = {}
 
-console.log('Server started at localhost:8080')
+console.log(`Server started at port ${port}`)
 
 function clientLog(clientId, message) {
 	console.log(`[${clientId}] ${message}`)
