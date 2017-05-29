@@ -44,6 +44,38 @@ class Ripple {
 }
 
 
+class Score {
+
+	constructor() {
+		this.value = 0
+	}
+
+
+	static get font() {
+		return '30px Arial'
+	}
+
+
+	static get color() {
+		return '#000000'
+	}
+
+
+	onTap() {
+		this.value += 1
+	}
+
+
+	render(context, time, canvasWidth, canvasHeight) {
+		context.font = Score.font
+		context.textAlign = 'center'
+		context.fillStyle = Score.color
+		context.fillText(this.value, Math.floor(canvasWidth / 2), Math.floor(canvasHeight / 2))
+	}
+
+}
+
+
 
 class App {
 
@@ -52,6 +84,7 @@ class App {
 		this.context = this.canvasElement.getContext('2d')
 
 		this.ripples = []
+		this.score = new Score()
 
 		this.onTap = this.onTap.bind(this)
 		this.onResize = this.onResize.bind(this)
@@ -78,6 +111,7 @@ class App {
 		const x = e.clientX
 		const y = e.clientY
 		this.addRipple(x, y)
+		this.score.onTap()
 	}
 
 
@@ -93,15 +127,19 @@ class App {
 
 
 	render() {
-		const c = this.context
+		const context = this.context
 		const currentTime = Date.now()
+		const width = this.canvasElement.width
+		const height = this.canvasElement.height
 
-		c.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height)
+		context.clearRect(0, 0, width, height)
 
 		this.ripples = this.ripples.filter((ripple) => {
-			ripple.render(c, currentTime)
+			ripple.render(context, currentTime)
 			return !ripple.isFinished(currentTime)
 		})
+
+		this.score.render(context, currentTime, width, height)
 	}
 
 
