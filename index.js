@@ -48,8 +48,8 @@ class Score {
 
 	constructor() {
 		this.value = this.getStoredScore()
-		this.currentFontSize = Score.maxFontSize
-		this.targetFontSize = this.currentFontSize
+		this.currentFontSize = 0
+		this.targetFontSize = 0
 	}
 
 
