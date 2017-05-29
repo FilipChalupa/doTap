@@ -282,7 +282,7 @@ class App {
 
 		this.ripples = []
 		this.score = new Score()
-		this.network = new Network('ws://192.168.0.23:8080', this.score)
+		this.network = new Network('wss://ofecka.herokuapp.com/', this.score)
 
 		this.onTap = this.onTap.bind(this)
 		this.onResize = this.onResize.bind(this)
