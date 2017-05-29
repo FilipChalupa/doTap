@@ -47,7 +47,7 @@ class Ripple {
 class Score {
 
 	constructor() {
-		this.value = 0
+		this.value = this.getStoredScore()
 		this.currentFontSize = Score.maxFontSize
 		this.targetFontSize = this.currentFontSize
 	}
@@ -73,8 +73,19 @@ class Score {
 	}
 
 
+	getStoredScore() {
+		return Number(localStorage.getItem('score')) || 0
+	}
+
+
+	storeScore() {
+		localStorage.setItem('score', this.value)
+	}
+
+
 	onTap() {
 		this.value += 1
+		this.storeScore()
 	}
 
 
