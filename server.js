@@ -40,10 +40,12 @@ wss.on('connection', (ws) => {
 	players[clientId] = {
 		socket: ws,
 		score: 0,
+		lastInputTime: Date.now(),
 	}
 
 	ws.on('message', (message) => {
 		clientLog(clientId, `New message: ${message}`)
+		players[clientId].lastInputTime = Date.now()
 		const actions = JSON.parse(message)
 		Object.keys(actions).forEach((action) => {
 			const data = actions[action]
