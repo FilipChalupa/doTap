@@ -12,11 +12,11 @@ function clientLog(clientId, message) {
 	console.log(`[${clientId}] ${message}`)
 }
 
-function broadcastToOtherPlayers(fromClientId, data) {
+function broadcastToOtherPlayers(blacklistIds, data) {
 	Object.keys(players).forEach((clientId) => {
 		clientId = clientId
 		const player = players[clientId]
-		if (clientId !== fromClientId) {
+		if (!blacklistIds.includes(clientId)) {
 			sendToClient(player.socket, data)
 		}
 	})
@@ -28,10 +28,12 @@ function sendToClient(clientSocket, data) {
 	}
 }
 
-function sendToPlayer(playerId, data) {
-	if (players[playerId]) {
-		sendToClient(players[playerId].socket, data)
-	}
+function sendToPlayers(playerIds, data) {
+	playerIds.forEach((playerId) => {
+		if (players[playerId]) {
+			sendToClient(players[playerId].socket, data)
+		}
+	})
 }
 
 wss.on('connection', (ws) => {
@@ -54,7 +56,7 @@ wss.on('connection', (ws) => {
 					players[clientId].score = Number(data)
 					break
 				case 'claimPoints':
-					broadcastToOtherPlayers(clientId, {
+					broadcastToOtherPlayers([ clientId ], {
 						claim: {
 							by: clientId,
 							score: players[clientId].score,
@@ -62,7 +64,7 @@ wss.on('connection', (ws) => {
 					})
 					break
 				case 'give':
-					sendToPlayer(data.to, {
+					sendToPlayers([ data.to ], {
 						add: data.amount,
 					})
 					break
@@ -72,3 +74,35 @@ wss.on('connection', (ws) => {
 		})
 	})
 })
+
+const BEST_TIME_PERIOD = 5000
+function broadcastBestPlayerLoop() {
+	let bestPlayerIds = []
+	let bestScore = 0
+	const now = Date.now()
+
+	Object.keys(players).forEach((playerId) => {
+		const player = players[playerId]
+		if (player.lastInputTime > now - BEST_TIME_PERIOD) {
+			if (player.score > bestScore) {
+				bestScore = player.score
+				bestPlayerIds = [ playerId ]
+			} else if (player.score === bestScore) {
+				bestPlayerIds.push(playerId)
+			}
+		}
+	})
+
+	broadcastToOtherPlayers(bestPlayerIds, {
+		best: false,
+	})
+	sendToPlayers(bestPlayerIds, {
+		best: true,
+	})
+
+	setTimeout(() => {
+		broadcastBestPlayerLoop()
+	}, 1000)
+}
+
+broadcastBestPlayerLoop()

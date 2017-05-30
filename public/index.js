@@ -176,9 +176,10 @@ class Score {
 
 class Network {
 
-	constructor(url, score) {
+	constructor(url, score, isBestCallback) {
 		this.url = url
 		this.score = score
+		this.isBestCallback = isBestCallback
 		this.socket = null
 		this.connected = false
 
@@ -254,6 +255,11 @@ class Network {
 				case 'add':
 					this.score.add(data)
 					break
+				case 'best':
+					if (this.isBestCallback) {
+						this.isBestCallback(data)
+					}
+					break
 				default:
 					console.warn(`Unknown action: ${action}`)
 			}
@@ -280,13 +286,14 @@ class App {
 		this.context = this.canvasElement.getContext('2d')
 		this.isInverted = false
 
-		this.ripples = []
-		this.score = new Score()
-		this.network = new Network('wss://ofecka.herokuapp.com/', this.score)
-
 		this.onTap = this.onTap.bind(this)
 		this.onResize = this.onResize.bind(this)
 		this.loop = this.loop.bind(this)
+		this.setInverted = this.setInverted.bind(this)
+
+		this.ripples = []
+		this.score = new Score()
+		this.network = new Network('wss://ofecka.herokuapp.com/', this.score, this.setInverted)
 
 		this.addListeners()
 		this.sizeCanvas()
