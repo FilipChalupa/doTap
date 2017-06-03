@@ -78,7 +78,7 @@ wss.on('connection', (ws) => {
 	})
 })
 
-const BEST_TIME_PERIOD = 5000
+const BEST_TIME_PERIOD = 60 * 1000 // One minute
 function broadcastBestPlayerLoop() {
 	let bestScore = 0
 	const now = Date.now()
