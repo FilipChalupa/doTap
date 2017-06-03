@@ -176,10 +176,10 @@ class Score {
 
 class Network {
 
-	constructor(url, score, isBestCallback) {
+	constructor(url, score, bestCallback) {
 		this.url = url
 		this.score = score
-		this.isBestCallback = isBestCallback
+		this.bestCallback = bestCallback
 		this.socket = null
 		this.connected = false
 
@@ -256,8 +256,8 @@ class Network {
 					this.score.add(data)
 					break
 				case 'best':
-					if (this.isBestCallback) {
-						this.isBestCallback(data)
+					if (this.bestCallback) {
+						this.bestCallback(data)
 					}
 					break
 				default:
@@ -290,10 +290,11 @@ class App {
 		this.onResize = this.onResize.bind(this)
 		this.loop = this.loop.bind(this)
 		this.setInverted = this.setInverted.bind(this)
+		this.bestCallback = this.bestCallback.bind(this)
 
 		this.ripples = []
 		this.score = new Score()
-		this.network = new Network(networkUrl, this.score, this.setInverted)
+		this.network = new Network(networkUrl, this.score, this.bestCallback)
 
 		this.addListeners()
 		this.sizeCanvas()
@@ -320,6 +321,14 @@ class App {
 	setInverted(isInverted) {
 		this.isInverted = isInverted
 		this.score.setInverted(isInverted)
+	}
+
+
+	bestCallback(highscore) {
+		const isBest = highscore <= this.score.value && highscore > 0
+		if (isBest !== this.isInverted) {
+			this.setInverted(isBest)
+		}
 	}
 
 
