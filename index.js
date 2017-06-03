@@ -1,5 +1,20 @@
 const PI2 = 2 * Math.PI
 
+
+function transColor(fromRGB, toRGB, deltaTime) {
+	const step = Math.max(1, deltaTime)
+	const result = fromRGB
+	for (let i = 0; i < 3; i++) {
+		if (result[i] < toRGB[i]) {
+			result[i] = Math.round(Math.min(result[i] + step, toRGB[i]))
+		} else {
+			result[i] = Math.round(Math.max(result[i] - step, toRGB[i]))
+		}
+	}
+	return result
+}
+
+
 class Ripple {
 
 	constructor(x, y) {
@@ -53,6 +68,7 @@ class Score {
 		this.updateCallback = null
 		this.claimCallback = null
 		this.isInverted = false
+		this.currentColor = Score.color
 	}
 
 
@@ -67,17 +83,22 @@ class Score {
 
 
 	static get color() {
-		return '#000000'
+		return [0, 0, 0]
 	}
 
 
 	static get colorInv() {
-		return '#FFFFFF'
+		return [255, 255, 255]
 	}
 
 
 	static get occupyWidth() {
 		return 0.5
+	}
+
+
+	getValue() {
+		return this.value
 	}
 
 
@@ -151,11 +172,13 @@ class Score {
 	}
 
 
-	render(context, time, canvasWidth, canvasHeight) {
+	render(context, canvasWidth, canvasHeight, deltaTime) {
 		const text = this.value
 		context.textAlign = 'center'
 		context.textBaseline = 'middle'
-		context.fillStyle = this.isInverted ? Score.colorInv : Score.color
+		const targetColor = this.isInverted ? Score.colorInv : Score.color
+		this.currentColor = transColor(this.currentColor, targetColor, deltaTime)
+		context.fillStyle = `rgb(${this.currentColor[0]}, ${this.currentColor[1]}, ${this.currentColor[2]})`
 
 		this.targetFontSize = Score.maxFontSize
 		while (true) {
@@ -174,14 +197,61 @@ class Score {
 
 
 
+class Offline {
+
+	constructor() {
+		this.isOffline = true
+	}
+
+
+	static get color() {
+		return '#7F7F7F'
+	}
+
+
+	static get font() {
+		return 'Arial'
+	}
+
+
+	static get fontSize() {
+		return 14
+	}
+
+
+	static get text() {
+		return 'Offline'
+	}
+
+
+	setOffline(isOffline) {
+		this.isOffline = isOffline
+	}
+
+
+	render(context, canvasWidth, canvasHeight) {
+		if (this.isOffline) {
+			context.textAlign = 'right'
+			context.textBaseline = 'hanging'
+			context.font = `${Offline.fontSize}px ${Offline.font}`
+			context.fillStyle = Offline.color
+			context.fillText(Offline.text, canvasWidth - Offline.fontSize, Offline.fontSize)
+		}
+	}
+
+}
+
+
+
 class Network {
 
-	constructor(url, score, isBestCallback) {
+	constructor(url, score, bestCallback, isConnectedCallback) {
 		this.url = url
 		this.score = score
-		this.isBestCallback = isBestCallback
+		this.bestCallback = bestCallback
 		this.socket = null
-		this.connected = false
+		this.isConnected = false
+		this.isConnectedCallback = isConnectedCallback
 
 		this.open = this.open.bind(this)
 		this.message = this.message.bind(this)
@@ -205,7 +275,20 @@ class Network {
 	}
 
 
+	setConnected(isConnected) {
+		this.isConnected = isConnected
+		if (this.isConnectedCallback) {
+			this.isConnectedCallback(isConnected)
+		}
+	}
+
+
 	onScoreUpdate(score) {
+		this.sendScore(score)
+	}
+
+
+	sendScore(score) {
 		this.send({
 			score,
 		})
@@ -228,14 +311,15 @@ class Network {
 
 
 	send(data) {
-		if (this.connected) {
+		if (this.isConnected) {
 			this.socket.send(JSON.stringify(data))
 		}
 	}
 
 
 	open(event) {
-		this.connected = true
+		this.setConnected(true)
+		this.sendScore(this.score.getValue())
 	}
 
 
@@ -256,8 +340,8 @@ class Network {
 					this.score.add(data)
 					break
 				case 'best':
-					if (this.isBestCallback) {
-						this.isBestCallback(data)
+					if (this.bestCallback) {
+						this.bestCallback(data)
 					}
 					break
 				default:
@@ -269,7 +353,7 @@ class Network {
 
 	close(event) {
 		this.socket = null
-		this.connected = false
+		this.setConnected(false)
 		setTimeout(() => {
 			this.connect()
 		}, Network.reconnectTimeout)
@@ -281,19 +365,26 @@ class Network {
 
 class App {
 
-	constructor() {
+	constructor(networkUrl) {
 		this.canvasElement = document.getElementById('canvas')
 		this.context = this.canvasElement.getContext('2d')
 		this.isInverted = false
+		this.currentColor = App.backroundColor
+		this.startTime = Date.now()
+		this.lastTime = this.startTime
 
 		this.onTap = this.onTap.bind(this)
+		this.onTouchEnd = this.onTouchEnd.bind(this)
 		this.onResize = this.onResize.bind(this)
 		this.loop = this.loop.bind(this)
 		this.setInverted = this.setInverted.bind(this)
+		this.bestCallback = this.bestCallback.bind(this)
+		this.isConnectedCallback = this.isConnectedCallback.bind(this)
 
 		this.ripples = []
 		this.score = new Score()
-		this.network = new Network('wss://ofecka.herokuapp.com/', this.score, this.setInverted)
+		this.network = new Network(networkUrl, this.score, this.bestCallback, this.isConnectedCallback)
+		this.offline = new Offline()
 
 		this.addListeners()
 		this.sizeCanvas()
@@ -302,18 +393,25 @@ class App {
 
 
 	static get backroundColor() {
-		return '#FFFFFF'
+		return [255, 255, 255]
 	}
 
 
 	static get backroundColorInv() {
-		return '#000000'
+		return [0, 0, 0]
 	}
 
 
 	addListeners() {
 		this.canvasElement.addEventListener('click', this.onTap)
+		this.canvasElement.addEventListener('touchstart', this.onTap)
+		this.canvasElement.addEventListener('touchend', this.onTouchEnd)
 		window.addEventListener('resize', this.onResize)
+	}
+
+
+	isConnectedCallback(isConnected) {
+		this.offline.setOffline(!isConnected)
 	}
 
 
@@ -323,14 +421,38 @@ class App {
 	}
 
 
+	bestCallback(highscore) {
+		const isBest = highscore <= this.score.value && highscore > 0
+		if (isBest !== this.isInverted) {
+			this.setInverted(isBest)
+		}
+	}
+
+
 	addRipple(x, y) {
 		this.ripples.push(new Ripple(x, y))
 	}
 
+	onTouchEnd(event) {
+		event.preventDefault()
+	}
 
-	onTap(e) {
-		const x = e.clientX
-		const y = e.clientY
+
+	onTap(event) {
+		let x
+		let y
+
+		if (event.type === 'touchstart') {
+			for (let i = 0; i < event.touches.length; i++) {
+				const touch = event.touches.item(i)
+				x = touch.clientX
+				y = touch.clientY
+			}
+		} else {
+			x = event.clientX
+			y = event.clientY
+		}
+
 		this.addRipple(x, y)
 		this.score.onTap()
 	}
@@ -350,11 +472,15 @@ class App {
 	render() {
 		const context = this.context
 		const currentTime = Date.now()
+		const deltaTime = currentTime - this.lastTime
+		this.lastTime = currentTime
 		const width = this.canvasElement.width
 		const height = this.canvasElement.height
 
+		const targetColor = this.isInverted ? App.backroundColorInv : App.backroundColor
+		this.currentColor = transColor(this.currentColor, targetColor, deltaTime)
+		context.fillStyle = `rgb(${this.currentColor[0]}, ${this.currentColor[1]}, ${this.currentColor[2]})`
 		context.rect(0, 0, width, height)
-		context.fillStyle = this.isInverted ? App.backroundColorInv :App.backroundColor
 		context.fill()
 
 		this.ripples = this.ripples.filter((ripple) => {
@@ -362,7 +488,8 @@ class App {
 			return !ripple.isFinished(currentTime)
 		})
 
-		this.score.render(context, currentTime, width, height)
+		this.score.render(context, width, height, deltaTime)
+		this.offline.render(context, width, height)
 	}
 
 
@@ -375,4 +502,5 @@ class App {
 }
 
 
-const app = new App()
+const wsUrl = window.location.hostname === 'localhost' ? 'ws://localhost:8080' : 'wss://ofecka.herokuapp.com/'
+const app = new App(wsUrl)
