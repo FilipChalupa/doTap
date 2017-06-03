@@ -281,7 +281,7 @@ class Network {
 
 class App {
 
-	constructor() {
+	constructor(networkUrl) {
 		this.canvasElement = document.getElementById('canvas')
 		this.context = this.canvasElement.getContext('2d')
 		this.isInverted = false
@@ -293,7 +293,7 @@ class App {
 
 		this.ripples = []
 		this.score = new Score()
-		this.network = new Network('wss://ofecka.herokuapp.com/', this.score, this.setInverted)
+		this.network = new Network(networkUrl, this.score, this.setInverted)
 
 		this.addListeners()
 		this.sizeCanvas()
@@ -375,4 +375,4 @@ class App {
 }
 
 
-const app = new App()
+const app = new App('wss://ofecka.herokuapp.com/')
