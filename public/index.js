@@ -174,14 +174,61 @@ class Score {
 
 
 
+class Offline {
+
+	constructor() {
+		this.isOffline = true
+	}
+
+
+	static get color() {
+		return '#7F7F7F'
+	}
+
+
+	static get font() {
+		return 'Arial'
+	}
+
+
+	static get fontSize() {
+		return 14
+	}
+
+
+	static get text() {
+		return 'Offline'
+	}
+
+
+	setOffline(isOffline) {
+		this.isOffline = isOffline
+	}
+
+
+	render(context, canvasWidth, canvasHeight) {
+		if (this.isOffline) {
+			context.textAlign = 'right'
+			context.textBaseline = 'hanging'
+			context.font = `${Offline.fontSize}px ${Offline.font}`
+			context.fillStyle = Offline.color
+			context.fillText(Offline.text, canvasWidth - Offline.fontSize, Offline.fontSize)
+		}
+	}
+
+}
+
+
+
 class Network {
 
-	constructor(url, score, bestCallback) {
+	constructor(url, score, bestCallback, isConnectedCallback) {
 		this.url = url
 		this.score = score
 		this.bestCallback = bestCallback
 		this.socket = null
-		this.connected = false
+		this.isConnected = false
+		this.isConnectedCallback = isConnectedCallback
 
 		this.open = this.open.bind(this)
 		this.message = this.message.bind(this)
@@ -202,6 +249,14 @@ class Network {
 	addListeners() {
 		this.score.onUpdate(this.onScoreUpdate)
 		this.score.onClaim(this.onScoreClaim)
+	}
+
+
+	setConnected(isConnected) {
+		this.isConnected = isConnected
+		if (this.isConnectedCallback) {
+			this.isConnectedCallback(isConnected)
+		}
 	}
 
 
@@ -228,14 +283,14 @@ class Network {
 
 
 	send(data) {
-		if (this.connected) {
+		if (this.isConnected) {
 			this.socket.send(JSON.stringify(data))
 		}
 	}
 
 
 	open(event) {
-		this.connected = true
+		this.setConnected(true)
 	}
 
 
@@ -269,7 +324,7 @@ class Network {
 
 	close(event) {
 		this.socket = null
-		this.connected = false
+		this.setConnected(false)
 		setTimeout(() => {
 			this.connect()
 		}, Network.reconnectTimeout)
@@ -291,10 +346,12 @@ class App {
 		this.loop = this.loop.bind(this)
 		this.setInverted = this.setInverted.bind(this)
 		this.bestCallback = this.bestCallback.bind(this)
+		this.isConnectedCallback = this.isConnectedCallback.bind(this)
 
 		this.ripples = []
 		this.score = new Score()
-		this.network = new Network(networkUrl, this.score, this.bestCallback)
+		this.network = new Network(networkUrl, this.score, this.bestCallback, this.isConnectedCallback)
+		this.offline = new Offline()
 
 		this.addListeners()
 		this.sizeCanvas()
@@ -315,6 +372,11 @@ class App {
 	addListeners() {
 		this.canvasElement.addEventListener('click', this.onTap)
 		window.addEventListener('resize', this.onResize)
+	}
+
+
+	isConnectedCallback(isConnected) {
+		this.offline.setOffline(!isConnected)
 	}
 
 
@@ -372,6 +434,7 @@ class App {
 		})
 
 		this.score.render(context, currentTime, width, height)
+		this.offline.render(context, width, height)
 	}
 
 
