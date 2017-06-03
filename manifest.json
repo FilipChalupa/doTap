@@ -1,0 +1,30 @@
+{
+	"lang": "en",
+	"name": "DoTap",
+	"short_name": "DoTap",
+	"description": "Tap till you die.",
+	"icons": [
+		{
+			"src": "icons/app-36.png",
+			"sizes": "36x36"
+		},
+		{
+			"src": "icons/app-72.png",
+			"sizes": "72x72"
+		},
+		{
+			"src": "icons/app-144.png",
+			"sizes": "144x144"
+		},
+		{
+			"src": "icons/app-192.png",
+			"sizes": "192x192"
+		}
+	],
+	"start_url": ".?utm_source=web_app_manifest",
+	"scope": ".",
+	"display": "standalone",
+	"orientation": "any",
+	"theme_color": "#000000",
+	"background_color": "#FFFFFF"
+}

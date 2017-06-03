@@ -3,18 +3,22 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 
 	<title>DoTap</title>
 
-	<meta name="description" content="">
+	<meta name="description" content="Tap till you die.">
 	<meta name="author" content="Filip Chalupa &lt;chalupa.filip@gmail.com&gt;">
+	<link rel="manifest" href="manifest.json">
+	<meta name="theme-color" content="#000000">
 
-	<!--<link rel="icon" type="image/png" href="/assets/images/favicon.png" sizes="16x16">-->
-	<!--<link rel="icon" type="image/png" href="/assets/images/favicon-32x32.png" sizes="32x32">-->
+	<link rel="icon" type="image/png" href="icons/app-36.png" sizes="36x36">
 	<script src="index.js" defer></script>
 
 	<style>
+		html {
+	    touch-action: none;
+		}
 		.canvas {
 			position: fixed;
 			top: 0;
@@ -28,6 +32,7 @@
 </head>
 <body>
 	<canvas id="canvas" class="canvas"></canvas>
+	<noscript>Please enable javascript.</noscript>
 	<script>
 		(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
 		(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
