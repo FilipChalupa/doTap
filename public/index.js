@@ -374,7 +374,6 @@ class App {
 		this.lastTime = this.startTime
 
 		this.onTap = this.onTap.bind(this)
-		this.onTouchEnd = this.onTouchEnd.bind(this)
 		this.onResize = this.onResize.bind(this)
 		this.loop = this.loop.bind(this)
 		this.setInverted = this.setInverted.bind(this)
@@ -404,8 +403,6 @@ class App {
 
 	addListeners() {
 		this.canvasElement.addEventListener('click', this.onTap)
-		this.canvasElement.addEventListener('touchstart', this.onTap)
-		this.canvasElement.addEventListener('touchend', this.onTouchEnd)
 		window.addEventListener('resize', this.onResize)
 	}
 
@@ -433,26 +430,10 @@ class App {
 		this.ripples.push(new Ripple(x, y))
 	}
 
-	onTouchEnd(event) {
-		event.preventDefault()
-	}
 
-
-	onTap(event) {
-		let x
-		let y
-
-		if (event.type === 'touchstart') {
-			for (let i = 0; i < event.touches.length; i++) {
-				const touch = event.touches.item(i)
-				x = touch.clientX
-				y = touch.clientY
-			}
-		} else {
-			x = event.clientX
-			y = event.clientY
-		}
-
+	onTap(e) {
+		const x = e.clientX
+		const y = e.clientY
 		this.addRipple(x, y)
 		this.score.onTap()
 	}
