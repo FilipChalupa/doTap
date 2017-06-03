@@ -375,4 +375,5 @@ class App {
 }
 
 
-const app = new App('wss://ofecka.herokuapp.com/')
+const wsUrl = window.location.hostname === 'localhost' ? 'ws://localhost:8080' : 'wss://ofecka.herokuapp.com/'
+const app = new App(wsUrl)

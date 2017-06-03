@@ -1,15 +1,18 @@
 const WebSocket = require('ws')
 
-const port = process.env.PORT || 8080
-const wss = new WebSocket.Server({ port })
+const PORT = process.env.PORT || 8080
+const DEBUG = process.env.DEBUG || false
+const wss = new WebSocket.Server({ port: PORT })
 
 let lastClientId = 0
 const players = {}
 
-console.log(`Server started at port ${port}`)
+console.log(`Server started at port ${PORT}`)
 
 function clientLog(clientId, message) {
-	console.log(`[${clientId}] ${message}`)
+	if (DEBUG) {
+		console.log(`[${clientId}] ${message}`)
+	}
 }
 
 function broadcastToOtherPlayers(blacklistIds, data) {
