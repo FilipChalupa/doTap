@@ -1,5 +1,20 @@
 const PI2 = 2 * Math.PI
 
+
+function transColor(fromRGB, toRGB, deltaTime) {
+	const step = Math.max(1, deltaTime)
+	const result = fromRGB
+	for (let i = 0; i < 3; i++) {
+		if (result[i] < toRGB[i]) {
+			result[i] = Math.round(Math.min(result[i] + step, toRGB[i]))
+		} else {
+			result[i] = Math.round(Math.max(result[i] - step, toRGB[i]))
+		}
+	}
+	return result
+}
+
+
 class Ripple {
 
 	constructor(x, y) {
@@ -53,6 +68,7 @@ class Score {
 		this.updateCallback = null
 		this.claimCallback = null
 		this.isInverted = false
+		this.currentColor = Score.color
 	}
 
 
@@ -67,12 +83,12 @@ class Score {
 
 
 	static get color() {
-		return '#000000'
+		return [0, 0, 0]
 	}
 
 
 	static get colorInv() {
-		return '#FFFFFF'
+		return [255, 255, 255]
 	}
 
 
@@ -151,11 +167,13 @@ class Score {
 	}
 
 
-	render(context, time, canvasWidth, canvasHeight) {
+	render(context, canvasWidth, canvasHeight, deltaTime) {
 		const text = this.value
 		context.textAlign = 'center'
 		context.textBaseline = 'middle'
-		context.fillStyle = this.isInverted ? Score.colorInv : Score.color
+		const targetColor = this.isInverted ? Score.colorInv : Score.color
+		this.currentColor = transColor(this.currentColor, targetColor, deltaTime)
+		context.fillStyle = `rgb(${this.currentColor[0]}, ${this.currentColor[1]}, ${this.currentColor[2]})`
 
 		this.targetFontSize = Score.maxFontSize
 		while (true) {
@@ -340,6 +358,9 @@ class App {
 		this.canvasElement = document.getElementById('canvas')
 		this.context = this.canvasElement.getContext('2d')
 		this.isInverted = false
+		this.currentColor = App.backroundColor
+		this.startTime = Date.now()
+		this.lastTime = this.startTime
 
 		this.onTap = this.onTap.bind(this)
 		this.onResize = this.onResize.bind(this)
@@ -360,12 +381,12 @@ class App {
 
 
 	static get backroundColor() {
-		return '#FFFFFF'
+		return [255, 255, 255]
 	}
 
 
 	static get backroundColorInv() {
-		return '#000000'
+		return [0, 0, 0]
 	}
 
 
@@ -421,11 +442,15 @@ class App {
 	render() {
 		const context = this.context
 		const currentTime = Date.now()
+		const deltaTime = currentTime - this.lastTime
+		this.lastTime = currentTime
 		const width = this.canvasElement.width
 		const height = this.canvasElement.height
 
+		const targetColor = this.isInverted ? App.backroundColorInv : App.backroundColor
+		this.currentColor = transColor(this.currentColor, targetColor, deltaTime)
+		context.fillStyle = `rgb(${this.currentColor[0]}, ${this.currentColor[1]}, ${this.currentColor[2]})`
 		context.rect(0, 0, width, height)
-		context.fillStyle = this.isInverted ? App.backroundColorInv :App.backroundColor
 		context.fill()
 
 		this.ripples = this.ripples.filter((ripple) => {
@@ -433,7 +458,7 @@ class App {
 			return !ripple.isFinished(currentTime)
 		})
 
-		this.score.render(context, currentTime, width, height)
+		this.score.render(context, width, height, deltaTime)
 		this.offline.render(context, width, height)
 	}
 
