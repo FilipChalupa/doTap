@@ -97,6 +97,11 @@ class Score {
 	}
 
 
+	getValue() {
+		return this.value
+	}
+
+
 	setInverted(isInverted) {
 		this.isInverted = isInverted
 	}
@@ -279,6 +284,11 @@ class Network {
 
 
 	onScoreUpdate(score) {
+		this.sendScore(score)
+	}
+
+
+	sendScore(score) {
 		this.send({
 			score,
 		})
@@ -309,6 +319,7 @@ class Network {
 
 	open(event) {
 		this.setConnected(true)
+		this.sendScore(this.score.getValue())
 	}
 
 
