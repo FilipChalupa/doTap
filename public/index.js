@@ -484,3 +484,10 @@ class App {
 
 const wsUrl = window.location.hostname === 'localhost' ? 'ws://localhost:8080' : 'wss://ofecka.herokuapp.com/'
 const app = new App(wsUrl)
+
+
+if ('serviceWorker' in navigator) {
+	window.addEventListener('load', () => {
+		navigator.serviceWorker.register('sw.js')
+	})
+}
