@@ -418,8 +418,7 @@ class App {
 	}
 
 
-	bestCallback(highscore) {
-		const isBest = highscore <= this.score.value && highscore > 0
+	bestCallback(isBest) {
 		if (isBest !== this.isInverted) {
 			this.setInverted(isBest)
 		}

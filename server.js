@@ -79,8 +79,10 @@ wss.on('connection', (ws) => {
 })
 
 const BEST_TIME_PERIOD = 60 * 1000 // One minute
+const BEST_UPDATE_CLIENTS_INTERVAL = 300
 function broadcastBestPlayerLoop() {
 	let bestScore = 0
+	let bestPlayerIds = []
 	const now = Date.now()
 
 	Object.keys(players).forEach((playerId) => {
@@ -88,19 +90,23 @@ function broadcastBestPlayerLoop() {
 		if (player.lastInputTime > now - BEST_TIME_PERIOD) {
 			if (player.score > bestScore) {
 				bestScore = player.score
+				bestPlayerIds = [ playerId ]
+			} else if (player.score === bestScore) {
+				bestPlayerIds.push(playerId)
 			}
 		}
 	})
 
-	if (bestScore !== 0) {
-		broadcastToOtherPlayers([], {
-			best: bestScore,
-		})
-	}
+	sendToPlayers(bestPlayerIds, {
+		best: true,
+	})
+	broadcastToOtherPlayers(bestPlayerIds, {
+		best: false,
+	})
 
 	setTimeout(() => {
 		broadcastBestPlayerLoop()
-	}, 1000)
+	}, BEST_UPDATE_CLIENTS_INTERVAL)
 }
 
 broadcastBestPlayerLoop()
