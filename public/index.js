@@ -432,6 +432,10 @@ class App {
 
 	isConnectedCallback(isConnected) {
 		this.offline.setOffline(!isConnected)
+
+		if (!isConnected && this.isInverted) {
+			this.setInverted(false)
+		}
 	}
 
 
