@@ -15,7 +15,7 @@ function clientLog(clientId, message) {
 	}
 }
 
-function broadcastToOtherPlayers(blacklistIds, data) {
+function sendToOtherPlayers(blacklistIds, data) {
 	Object.keys(players).forEach((clientId) => {
 		clientId = clientId
 		const player = players[clientId]
@@ -59,11 +59,19 @@ wss.on('connection', (ws) => {
 					players[clientId].score = Number(data)
 					break
 				case 'claimPoints':
-					broadcastToOtherPlayers([ clientId ], {
-						claim: {
-							by: clientId,
-							score: players[clientId].score,
-						},
+					const playersToSubtract = []
+					getActivePlayersIds().forEach((playerId) => {
+						const player = players[playerId]
+						if (playerId !== clientId && player.score > 0) {
+							player.score--
+							playersToSubtract.push(playerId)
+						}
+					})
+					sendToPlayers([ clientId ], {
+						add: playersToSubtract.length,
+					})
+					sendToPlayers(playersToSubtract, {
+						subtract: 1,
 					})
 					break
 				case 'give':
@@ -110,7 +118,7 @@ function broadcastBestPlayerLoop() {
 	sendToPlayers(bestPlayerIds, {
 		best: true,
 	})
-	broadcastToOtherPlayers(bestPlayerIds, {
+	sendToOtherPlayers(bestPlayerIds, {
 		best: false,
 	})
 

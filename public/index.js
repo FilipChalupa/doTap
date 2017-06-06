@@ -118,9 +118,11 @@ class Score {
 
 
 	updateValue(value) {
-		this.value = value
-		this.storeScore()
-		this.sendScore()
+		if (this.value !== value) {
+			this.value = value
+			this.storeScore()
+			this.sendScore()
+		}
 	}
 
 
@@ -135,16 +137,8 @@ class Score {
 	}
 
 
-	removeRelativeTo(otherScore) {
-		const valueToRemove = 1
-		let newValue = this.value - valueToRemove
-		if (newValue < 0) {
-			this.updateValue(0)
-			return this.value
-		}
-
-		this.updateValue(newValue)
-		return valueToRemove
+	subtract(value) {
+		this.updateValue(Math.max(0, this.value - value))
 	}
 
 
@@ -351,13 +345,8 @@ class Network {
 		Object.keys(actions).forEach((action) => {
 			const data = actions[action]
 			switch(action) {
-				case 'claim':
-					this.send({
-						give: {
-							to: data.by,
-							amount: this.score.removeRelativeTo(data.score),
-						},
-					})
+				case 'subtract':
+					this.score.subtract(data)
 					break
 				case 'add':
 					this.score.add(data)
