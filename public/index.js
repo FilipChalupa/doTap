@@ -201,11 +201,13 @@ class Offline {
 
 	constructor() {
 		this.isOffline = true
+		this.opacity = 0
+		this.targetOpacity = 1
 	}
 
 
 	static get color() {
-		return '#7F7F7F'
+		return [127, 127, 127]
 	}
 
 
@@ -226,17 +228,19 @@ class Offline {
 
 	setOffline(isOffline) {
 		this.isOffline = isOffline
+		this.targetOpacity = isOffline ? 1 : 0
 	}
 
 
 	render(context, canvasWidth, canvasHeight) {
-		if (this.isOffline) {
-			context.textAlign = 'right'
-			context.textBaseline = 'hanging'
-			context.font = `${Offline.fontSize}px ${Offline.font}`
-			context.fillStyle = Offline.color
-			context.fillText(Offline.text, canvasWidth - Offline.fontSize, Offline.fontSize)
+		if (this.targetOpacity !== this.opacity) {
+			this.opacity = Math.min(1, Math.max(this.opacity + (this.targetOpacity - this.opacity) / 10))
 		}
+		context.textAlign = 'right'
+		context.textBaseline = 'hanging'
+		context.font = `${Offline.fontSize}px ${Offline.font}`
+		context.fillStyle = `rgba(${Offline.color[0]},${Offline.color[1]},${Offline.color[2]},${this.opacity})`
+		context.fillText(Offline.text, canvasWidth - Offline.fontSize, Offline.fontSize)
 	}
 
 }
