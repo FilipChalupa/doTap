@@ -1,4 +1,4 @@
-const CACHE_NAME = 'v1.1'
+const CACHE_NAME = 'v1.2'
 
 const urlsToCache = [
 	'',
@@ -15,7 +15,6 @@ self.addEventListener('install', (event) => {
 })
 
 self.addEventListener('fetch', (event) => {
-	console.log('fetch')
 	event.respondWith(
 		caches.match(event.request)
 			.then((response) => {

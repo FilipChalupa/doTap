@@ -118,9 +118,11 @@ class Score {
 
 
 	updateValue(value) {
-		this.value = value
-		this.storeScore()
-		this.sendScore()
+		if (this.value !== value) {
+			this.value = value
+			this.storeScore()
+			this.sendScore()
+		}
 	}
 
 
@@ -135,16 +137,8 @@ class Score {
 	}
 
 
-	removeRelativeTo(otherScore) {
-		const valueToRemove = 1
-		let newValue = this.value - valueToRemove
-		if (newValue < 0) {
-			this.updateValue(0)
-			return this.value
-		}
-
-		this.updateValue(newValue)
-		return valueToRemove
+	subtract(value) {
+		this.updateValue(Math.max(0, this.value - value))
 	}
 
 
@@ -201,11 +195,14 @@ class Offline {
 
 	constructor() {
 		this.isOffline = true
+		this.opacity = 0
+		this.targetOpacity = 0
+		this.delayNextChange = true
 	}
 
 
 	static get color() {
-		return '#7F7F7F'
+		return [127, 127, 127]
 	}
 
 
@@ -224,19 +221,39 @@ class Offline {
 	}
 
 
+	static get nextChangeDelay() {
+		return 3000
+	}
+
+
 	setOffline(isOffline) {
 		this.isOffline = isOffline
+
+		if (this.delayNextChange) {
+			this.delayNextChange = false
+			setTimeout(() => {
+				this.updateTargetOpacity()
+			}, Offline.nextChangeDelay)
+		} else {
+			this.updateTargetOpacity()
+		}
+	}
+
+
+	updateTargetOpacity() {
+		this.targetOpacity = this.isOffline ? 1 : 0
 	}
 
 
 	render(context, canvasWidth, canvasHeight) {
-		if (this.isOffline) {
-			context.textAlign = 'right'
-			context.textBaseline = 'hanging'
-			context.font = `${Offline.fontSize}px ${Offline.font}`
-			context.fillStyle = Offline.color
-			context.fillText(Offline.text, canvasWidth - Offline.fontSize, Offline.fontSize)
+		if (this.targetOpacity !== this.opacity) {
+			this.opacity = Math.min(1, Math.max(this.opacity + (this.targetOpacity - this.opacity) / 10))
 		}
+		context.textAlign = 'right'
+		context.textBaseline = 'hanging'
+		context.font = `${Offline.fontSize}px ${Offline.font}`
+		context.fillStyle = `rgba(${Offline.color[0]},${Offline.color[1]},${Offline.color[2]},${this.opacity})`
+		context.fillText(Offline.text, canvasWidth - Offline.fontSize, Offline.fontSize)
 	}
 
 }
@@ -328,13 +345,8 @@ class Network {
 		Object.keys(actions).forEach((action) => {
 			const data = actions[action]
 			switch(action) {
-				case 'claim':
-					this.send({
-						give: {
-							to: data.by,
-							amount: this.score.removeRelativeTo(data.score),
-						},
-					})
+				case 'subtract':
+					this.score.subtract(data)
 					break
 				case 'add':
 					this.score.add(data)
@@ -409,6 +421,10 @@ class App {
 
 	isConnectedCallback(isConnected) {
 		this.offline.setOffline(!isConnected)
+
+		if (!isConnected && this.isInverted) {
+			this.setInverted(false)
+		}
 	}
 
 
