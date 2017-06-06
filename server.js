@@ -104,23 +104,26 @@ function broadcastBestPlayerLoop() {
 	let bestScore = 0
 	let bestPlayerIds = []
 	const now = Date.now()
+	const activePlayersIds = getActivePlayersIds()
 
-	getActivePlayersIds().forEach((playerId) => {
-		const player = players[playerId]
-		if (player.score > bestScore) {
-			bestScore = player.score
-			bestPlayerIds = [ playerId ]
-		} else if (player.score === bestScore) {
-			bestPlayerIds.push(playerId)
-		}
-	})
+	if (activePlayersIds.length > 1) {
+		activePlayersIds.forEach((playerId) => {
+			const player = players[playerId]
+			if (player.score > bestScore) {
+				bestScore = player.score
+				bestPlayerIds = [ playerId ]
+			} else if (player.score === bestScore) {
+				bestPlayerIds.push(playerId)
+			}
+		})
 
-	sendToPlayers(bestPlayerIds, {
-		best: true,
-	})
-	sendToOtherPlayers(bestPlayerIds, {
-		best: false,
-	})
+		sendToPlayers(bestPlayerIds, {
+			best: true,
+		})
+		sendToOtherPlayers(bestPlayerIds, {
+			best: false,
+		})
+	}
 
 	setTimeout(() => {
 		broadcastBestPlayerLoop()
