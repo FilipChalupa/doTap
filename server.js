@@ -78,22 +78,32 @@ wss.on('connection', (ws) => {
 	})
 })
 
-const BEST_TIME_PERIOD = 60 * 1000 // One minute
-const BEST_UPDATE_CLIENTS_INTERVAL = 300
+const ACTIVE_PLAYER_TIME_PERIOD = 60 * 1000 // One minute
+function getActivePlayersIds() {
+	const activePlayers = []
+	const now = Date.now()
+	Object.keys(players).forEach((playerId) => {
+		const player = players[playerId]
+		if (player.lastInputTime > now - ACTIVE_PLAYER_TIME_PERIOD && player.socket.readyState === WebSocket.OPEN) {
+			activePlayers.push(playerId)
+		}
+	})
+	return activePlayers
+}
+
+const BEST_UPDATE_PLAYERS_INTERVAL = 300
 function broadcastBestPlayerLoop() {
 	let bestScore = 0
 	let bestPlayerIds = []
 	const now = Date.now()
 
-	Object.keys(players).forEach((playerId) => {
+	getActivePlayersIds().forEach((playerId) => {
 		const player = players[playerId]
-		if (player.lastInputTime > now - BEST_TIME_PERIOD) {
-			if (player.score > bestScore) {
-				bestScore = player.score
-				bestPlayerIds = [ playerId ]
-			} else if (player.score === bestScore) {
-				bestPlayerIds.push(playerId)
-			}
+		if (player.score > bestScore) {
+			bestScore = player.score
+			bestPlayerIds = [ playerId ]
+		} else if (player.score === bestScore) {
+			bestPlayerIds.push(playerId)
 		}
 	})
 
@@ -106,7 +116,7 @@ function broadcastBestPlayerLoop() {
 
 	setTimeout(() => {
 		broadcastBestPlayerLoop()
-	}, BEST_UPDATE_CLIENTS_INTERVAL)
+	}, BEST_UPDATE_PLAYERS_INTERVAL)
 }
 
 broadcastBestPlayerLoop()
