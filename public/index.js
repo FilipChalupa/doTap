@@ -202,7 +202,8 @@ class Offline {
 	constructor() {
 		this.isOffline = true
 		this.opacity = 0
-		this.targetOpacity = 1
+		this.targetOpacity = 0
+		this.delayNextChange = true
 	}
 
 
@@ -226,9 +227,27 @@ class Offline {
 	}
 
 
+	static get nextChangeDelay() {
+		return 3000
+	}
+
+
 	setOffline(isOffline) {
 		this.isOffline = isOffline
-		this.targetOpacity = isOffline ? 1 : 0
+
+		if (this.delayNextChange) {
+			this.delayNextChange = false
+			setTimeout(() => {
+				this.updateTargetOpacity()
+			}, Offline.nextChangeDelay)
+		} else {
+			this.updateTargetOpacity()
+		}
+	}
+
+
+	updateTargetOpacity() {
+		this.targetOpacity = this.isOffline ? 1 : 0
 	}
 
 
