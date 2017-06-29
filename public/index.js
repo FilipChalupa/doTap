@@ -112,6 +112,11 @@ class Score {
 	}
 
 
+	reloadScore() {
+		this.value = this.getStoredScore()
+	}
+
+
 	storeScore() {
 		localStorage.setItem('score', this.value)
 	}
@@ -190,7 +195,6 @@ class Score {
 }
 
 
-
 class Offline {
 
 	constructor() {
@@ -259,7 +263,6 @@ class Offline {
 }
 
 
-
 class Network {
 
 	constructor(url, score, bestCallback, isConnectedCallback) {
@@ -269,6 +272,7 @@ class Network {
 		this.socket = null
 		this.isConnected = false
 		this.isConnectedCallback = isConnectedCallback
+		this.allowReconnect = true
 
 		this.open = this.open.bind(this)
 		this.message = this.message.bind(this)
@@ -324,6 +328,15 @@ class Network {
 		this.socket.addEventListener('open', this.open)
 		this.socket.addEventListener('message', this.message)
 		this.socket.addEventListener('close', this.close)
+		this.allowReconnect = true
+	}
+
+
+	disconnect() {
+		this.allowReconnect = false
+		if (this.isConnected) {
+			this.socket.close()
+		}
 	}
 
 
@@ -366,13 +379,14 @@ class Network {
 	close(event) {
 		this.socket = null
 		this.setConnected(false)
-		setTimeout(() => {
-			this.connect()
-		}, Network.reconnectTimeout)
+		if (this.allowReconnect) {
+			setTimeout(() => {
+				this.connect()
+			}, Network.reconnectTimeout)
+		}
 	}
 
 }
-
 
 
 class App {
@@ -387,6 +401,8 @@ class App {
 
 		this.onTap = this.onTap.bind(this)
 		this.onResize = this.onResize.bind(this)
+		this.onFocus = this.onFocus.bind(this)
+		this.onBlur = this.onBlur.bind(this)
 		this.loop = this.loop.bind(this)
 		this.setInverted = this.setInverted.bind(this)
 		this.bestCallback = this.bestCallback.bind(this)
@@ -416,6 +432,8 @@ class App {
 	addListeners() {
 		this.canvasElement.addEventListener('click', this.onTap)
 		window.addEventListener('resize', this.onResize)
+		window.addEventListener('focus', this.onFocus)
+		window.addEventListener('blur', this.onBlur)
 	}
 
 
@@ -456,6 +474,17 @@ class App {
 
 	onResize(e) {
 		this.sizeCanvas()
+	}
+
+
+	onFocus() {
+		this.score.reloadScore()
+		this.network.connect()
+	}
+
+
+	onBlur() {
+		this.network.disconnect()
 	}
 
 

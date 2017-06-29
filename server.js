@@ -48,6 +48,10 @@ wss.on('connection', (ws) => {
 		lastInputTime: Date.now(),
 	}
 
+	ws.on('close', () => {
+		clientLog(clientId, 'Disconnected')
+	})
+
 	ws.on('message', (message) => {
 		clientLog(clientId, `New message: ${message}`)
 		players[clientId].lastInputTime = Date.now()
