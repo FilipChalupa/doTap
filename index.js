@@ -195,6 +195,7 @@ class Score {
 }
 
 
+
 class Offline {
 
 	constructor() {
@@ -263,6 +264,7 @@ class Offline {
 }
 
 
+
 class Network {
 
 	constructor(url, score, bestCallback, isConnectedCallback) {
@@ -272,7 +274,6 @@ class Network {
 		this.socket = null
 		this.isConnected = false
 		this.isConnectedCallback = isConnectedCallback
-		this.allowReconnect = true
 
 		this.open = this.open.bind(this)
 		this.message = this.message.bind(this)
@@ -328,15 +329,6 @@ class Network {
 		this.socket.addEventListener('open', this.open)
 		this.socket.addEventListener('message', this.message)
 		this.socket.addEventListener('close', this.close)
-		this.allowReconnect = true
-	}
-
-
-	disconnect() {
-		this.allowReconnect = false
-		if (this.isConnected) {
-			this.socket.close()
-		}
 	}
 
 
@@ -379,14 +371,13 @@ class Network {
 	close(event) {
 		this.socket = null
 		this.setConnected(false)
-		if (this.allowReconnect) {
-			setTimeout(() => {
-				this.connect()
-			}, Network.reconnectTimeout)
-		}
+		setTimeout(() => {
+			this.connect()
+		}, Network.reconnectTimeout)
 	}
 
 }
+
 
 
 class App {
@@ -479,12 +470,12 @@ class App {
 
 	onFocus() {
 		this.score.reloadScore()
-		this.network.connect()
+		this.network.send({ active: true })
 	}
 
 
 	onBlur() {
-		this.network.disconnect()
+		this.network.send({ active: false })
 	}
 
 
