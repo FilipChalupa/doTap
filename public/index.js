@@ -112,6 +112,11 @@ class Score {
 	}
 
 
+	reloadScore() {
+		this.value = this.getStoredScore()
+	}
+
+
 	storeScore() {
 		localStorage.setItem('score', this.value)
 	}
@@ -387,6 +392,8 @@ class App {
 
 		this.onTap = this.onTap.bind(this)
 		this.onResize = this.onResize.bind(this)
+		this.onFocus = this.onFocus.bind(this)
+		this.onBlur = this.onBlur.bind(this)
 		this.loop = this.loop.bind(this)
 		this.setInverted = this.setInverted.bind(this)
 		this.bestCallback = this.bestCallback.bind(this)
@@ -416,6 +423,8 @@ class App {
 	addListeners() {
 		this.canvasElement.addEventListener('click', this.onTap)
 		window.addEventListener('resize', this.onResize)
+		window.addEventListener('focus', this.onFocus)
+		window.addEventListener('blur', this.onBlur)
 	}
 
 
@@ -456,6 +465,17 @@ class App {
 
 	onResize(e) {
 		this.sizeCanvas()
+	}
+
+
+	onFocus() {
+		this.score.reloadScore()
+		this.network.send({ active: true })
+	}
+
+
+	onBlur() {
+		this.network.send({ active: false })
 	}
 
 

@@ -46,7 +46,12 @@ wss.on('connection', (ws) => {
 		socket: ws,
 		score: 0,
 		lastInputTime: Date.now(),
+		active: true,
 	}
+
+	ws.on('close', () => {
+		clientLog(clientId, 'Disconnected')
+	})
 
 	ws.on('message', (message) => {
 		clientLog(clientId, `New message: ${message}`)
@@ -55,6 +60,9 @@ wss.on('connection', (ws) => {
 		Object.keys(actions).forEach((action) => {
 			const data = actions[action]
 			switch (action) {
+				case 'active':
+					players[clientId].active = Boolean(data)
+					break
 				case 'score':
 					players[clientId].score = Number(data)
 					break
@@ -92,7 +100,7 @@ function getActivePlayersIds() {
 	const now = Date.now()
 	Object.keys(players).forEach((playerId) => {
 		const player = players[playerId]
-		if (player.lastInputTime > now - ACTIVE_PLAYER_TIME_PERIOD && player.socket.readyState === WebSocket.OPEN) {
+		if (player.lastInputTime > now - ACTIVE_PLAYER_TIME_PERIOD && player.socket.readyState === WebSocket.OPEN && player.active) {
 			activePlayers.push(playerId)
 		}
 	})
